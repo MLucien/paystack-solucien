@@ -1,0 +1,33 @@
+{
+  "name": "paystack-solucien",
+  "version": "1.0.0",
+  "description": "API wrapper for paystack endpoints with most functionality",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha ./test/*.js --reporter spec --timeout 8000"
+  },
+  "keywords": [
+    "payment",
+    "API",
+    "ZAR",
+    "paystack"
+  ],
+  "author": "Lucien Mendela for Solucien Industries <info@solucien.com> (https://solucien.co.za/)",
+  "license": "MIT",
+  "dependencies": {
+    "promise": "^8.2.0",
+    "request": "^2.88.2"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MLucien/paystack-solucien.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MLucien/paystack-solucien/issues"
+  },
+  "homepage": "https://github.com/MLucien/paystack-solucien"
+}
