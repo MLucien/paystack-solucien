@@ -1,54 +1,69 @@
-'use strict';
+/*
+Paystack API - Customer
+*/
 
-const root = '/customer';
+const route = "/customer";
 
 module.exports = {
-
   /*
   Create customer
-  @param: first_name, last_name, email, phone
   */
   create: {
-      method: 'post',
-      endpoint: root,
-      params: ['first_name', 'last_name', 'email*', 'phone']
-    },
-
-  /*
-  Get customer by their email
-  */
-  get: {
-      method: 'get',
-      endpoint: [root, '/{email}}'].join(''),
-      args: ['email']
+    method: "post",
+    route: route,
+    params: ["first_name", "last_name", "email*", "phone", "metadata"]
   },
 
   /*
   List customers
   */
   list: {
-      method: 'get',
-      endpoint: root
-    },
+    method: "get",
+    route: route,
+    args: ["perPage", "page"]
+  },
+
+  /*
+  Get customer
+  */
+  get: {
+    method: "get",
+    route: `${route}/{email}`
+  },
 
   /*
   Update customer
-  @param: first_name, last_name, email, phone
   */
   update: {
-      method: 'put',
-      endpoint: [root, '/{id}'].join(''),
-      params: ['first_name', 'last_name', 'email', 'phone'],
-      args: ['id']
-    },
+    method: "put",
+    route: `${route}/{id}`,
+    params: ["first_name", "last_name", "phone", "metadata"]
+  },
+
+  /*
+  Validate customer
+  */
+ validate: {
+  method: "post",
+  route: `${route}/{id}/identification`,
+  params: ["first_name*", "last_name*", "type*", "value*", "country*"]
+},
 
   /*
   White/Blacklist customer
-  @param: customer, risk_action ('allow' to whitelist or 'deny' to blacklist)
   */
   setRiskAction: {
-    method: 'post',
-    endpoint: [root, '/set_risk_action'].join(''),
-    params: ['customer*', 'risk_action']
+    method: "post",
+    route: `${route}/set_risk_action`,
+    params: ["customer*", "risk_action"]
+  },
+
+  /*
+  Deactivate Authorization for customer
+  */
+  deactivateAuth: {
+    method: "post",
+    route: `${route}/deactivate_authorization`,
+    params: ["authorization_code*"]
   }
 };

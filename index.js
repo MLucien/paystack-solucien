@@ -1,187 +1,145 @@
 /*
 Paystack API wrapper
-@author Obembe Opeyemi <@kehers>
+@author Lucien Mendela <@Lucien_Mendela>
 */
 
-'use strict';
-
-var
-    request = require('request'),
-    root = 'https://api.paystack.co',
-    Promise = require('promise')
-;
-
-var resources = {
-  customer: require('./resources/customer'),
-  plan: require('./resources/plan'),
-  transaction: require('./resources/transaction'),
-  page: require('./resources/page'),
-  subscription: require('./resources/subscription'),
-  subaccount: require('./resources/subaccount'),
-  settlements: require('./resources/settlements'),
-  misc: require('./resources/misc')
-}
+const request = require("request-promise");
+const endpoint = "https://api.paystack.co";
+const Events = require("./resources/events");
 
 function Paystack(key) {
   if (!(this instanceof Paystack)) {
     return new Paystack(key);
   }
 
+  this.endpoint = endpoint;
   this.key = key;
-  this.importResources();
+  this.import();
+
+  // Setup Events
+  this.Events = new Events(this.key);
 }
 
-Paystack.prototype = {
+const resources = {
+  customer: require("./resources/customer"),
+  bulk_charge: require("./resources/bulk_charge"),
+  charge: require("./resources/charge"),
+  control_panel: require("./resources/control_panel"),
+  invoice: require("./resources/invoice"),
+  nuban: require("./resources/nuban"),
+  page: require("./resources/page"),
+  plan: require("./resources/plan"),
+  refund: require("./resources/refund"),
+  settlement: require("./resources/settlement"),
+  subaccount: require("./resources/subaccount"),
+  subscription: require("./resources/subscription"),
+  transaction: require("./resources/transaction"),
+  transfer_control: require("./resources/transfer_control"),
+  transfer_recipient: require("./resources/transfer_recipient"),
+  transfer: require("./resources/transfer"),
+  verification: require("./resources/verification"),
+  misc: require("./resources/misc")
+};
 
-  extend:  function(params) {
-  	// This looks more sane.
-    var self = this;
-    return function(){
-      // Convert argument to array
-      var args = new Array(arguments.length);
-      var l = args.length;
-      for(var i = 0; i < l; ++i) {
-        args[i] = arguments[i];
+Paystack.prototype = {
+  extend: function(func) {
+    const me = this;
+    return function() {
+      const data = arguments[0] || {};
+
+      // check method
+      const method = ["post", "get", "put", "delete"].includes(func.method)
+        ? func.method
+        : (function() {
+            throw new Error("Method not Allowed! - Resource declaration error");
+          })();
+
+      var endpoint = me.endpoint + func.route,
+        qs = {};
+
+      // Highest priority should go to path variables parsing and validation
+      var argsInEndpoint = endpoint.match(/{[^}]+}/g);
+      if (argsInEndpoint) {
+          argsInEndpoint.map(arg => {
+            arg = arg.replace(/\W/g, "");
+            if (!(arg in data)) {
+              throw new Error(`Argument '${arg}' is required`);
+            } else {
+              endpoint = endpoint.replace(`{${arg}}`, data[`${arg}`]);
+              // to avoid error, remove the path arg from body | qs params
+              // by deleting it from the data object before body | qs params are set
+              delete data[arg];
+            }
+          });
       }
 
-      // Check for callback & Pull it out from the array
-      var callback = l > 0 && typeof args.slice(l-1)[0] === "function" ? args.splice(l-1)[0] : undefined;
+      // incase of endpoints with no params requirement
+      if (func.params) {
+        // check args
+        func.params.filter(param => {
+          if (!param.includes("*")) return;
 
-      var body, qs;
-
-      // quick fix - method checking
-      var method = params.method in {"get":'', "post":'', "put":''}
-                 ? params.method
-                 : (function () { throw new Error("Method not Allowed! - Resource declaration error") })()
-      var endpoint = [root, params.endpoint].join('');
-      // Checking for required params;
-      if(params.params) {
-        var paramList = params.params;
-
-        // Pull body passed
-        var body = args.length === 2 ? args[1] : args[0];
-        paramList.filter(function(item, index, array) {
-          if(item.indexOf("*") === -1) {
-            // Not required
-            return;
+          param = param.replace("*", "");
+          if (!(param in data)) {
+            throw new Error(`Parameter '${param}' is required`);
           }
-          item = item.replace("*", "");
 
-          if(!(item in body)) {
-            throw new Error("Required Parameters Ommited - " + item);
-          }
           return;
-
         });
       }
 
-      // Get arguments in endpoint e.g {id} in customer/{id} and pull
-      // out from array
-      var argsInEndpoint = endpoint.match(/{[^}]+}/g);
-      if (argsInEndpoint) {
-        l = argsInEndpoint.length;
-
-        // Do we have one or more?
-        if (l > 0) {
-          // Confirm resource declaration good
-          if (!Array.isArray(params.args)) {
-            // error
-            throw new Error('Resource declaration error');
-          }
-
-          // Confirm user passed the argument to method
-          // and replace in endpoint
-
-          var match, index;
-          for (var i=0;i<l;i++) {
-            match = argsInEndpoint[i].replace(/\W/g, '');
-            index = params.args.indexOf(match);
-            if (index != -1) {
-              if (!args[index]) {
-                // error
-                throw new Error('Resource declaration error');
-              }
-
-              // todo: args[index] must be string or int
-              endpoint = endpoint.replace(new RegExp(argsInEndpoint[i]), args[index]);
-              args.splice(index, 1);
+      // incase of endpoints with no args requirement
+      if (func.args) {
+        // check args
+        func.args.filter(a => {
+          // remove unwanted properties
+          if (!a.includes("*")) {
+            if (a in data) {
+              qs[`${a}`] = data[`${a}`];
             }
+            return;
           }
-        }
+
+          a = a.replace("*", "");
+          if (!(a in data)) {
+            throw new Error(`Argument '${a}' is required`);
+          } else {
+            qs[`${a}`] = data[`${a}`];
+          }
+
+          return;
+        });
       }
 
-      // Add post/put/[delete?] body
-      if (args[0]) {
-        if (method == 'post' || method == 'put') {
-          // Body
-          body = args[0];
-        }
-        else if (method == 'get') {
-          qs = args[0];
-        }
-      }
-
-      // Make request
-      var options = {
+      // Create request
+      const options = {
         url: endpoint,
         json: true,
         method: method.toUpperCase(),
         headers: {
-          'Authorization': ['Bearer ', self.key].join('')
+          Authorization: `Bearer ${me.key}`
         }
+      };
+
+      if (method == "post" || method == "put") {
+        options.body = data;
+      } else {
+        options.qs = qs;
       }
 
-      if (body)
-        options.body = body;
-
-      if (qs)
-        options.qs = qs;
-
-      return new Promise(function (fulfill, reject){
-        request(options, function(error, response, body) {
-          // return body
-          if (error){
-            reject(error);
-          }
-          else if(!body.status){
-          
-            // Error from API??
-            error = body;
-            body = null;
-            reject(error);
-          }
-          else{
-            fulfill(body);
-          }
-        });
-      }).then(function(value) {
-      	if(callback) {
-      		return callback(null, value);
-      	}
-      	return value;
-      }).catch(function(reason) {
-      	if(callback) {
-      		return callback(reason, null);
-      	}
-      	return reason;
-      });
+      return request(options);
+    };
+  },
+  import: function() {
+    for (var i in resources) {
+      const anon = function() {};
+      for (var j in resources[i]) {
+        anon.prototype[j] = this.extend(resources[i][j]);
+      }
+      Paystack.prototype[i] = new anon();
     }
   },
-
-  importResources: function() {
-    var anon;
-    // Looping over all resources
-    for (var j in resources) {
-      // Creating a surrogate function
-      anon = function(){};
-      // Looping over the properties of each resource
-      for(var i in resources[j]) {
-        anon.prototype[i] = this.extend(resources[j][i]);
-      }
-      Paystack.prototype[j] = new anon();
-    }
-  }
+  FeeHelper: require("./resources/fee_helper")
 };
-
 
 module.exports = Paystack;

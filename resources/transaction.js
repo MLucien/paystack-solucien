@@ -1,77 +1,99 @@
-'use strict';
+"use strict";
 
-const root = '/transaction';
+var route = "/transaction";
 
 module.exports = {
-
   /*
   Initialize transaction
   */
   initialize: {
-      method: 'post',
-      endpoint: [root, '/initialize'].join(''),
-      params: ['reference', 'amount*', 'email*', 'plan']
-    },
+    method: "post",
+    route: [route, "/initialize"].join(""),
+    params: ["reference", "amount*", "email*", "plan"]
+  },
 
   /*
-  Export transactions
+  Verify transaction
   */
-  export: {
-      method: 'get',
-      endpoint: [root, '/export'].join(''),
-      params: ['from', 'to', 'settled', 'payment_page']
-    },
-
-  /*
-  Charge authorization
-  */
-  charge: {
-      method: 'post',
-      endpoint: [root, '/charge_authorization'].join(''),
-      params: ['reference', 'authorization_code*', 'email*', 'amount*']
-    },
-
-  /*
-  Charge token
-  */
-  chargeToken: {
-      method: 'post',
-      endpoint: [root, '/charge_token'].join(''),
-      params: ['reference', 'token*', 'email', 'amount']
-    },
-
-  /*
-  Get transaction
-  */
-  get: {
-      method: 'get',
-      endpoint: [root, '/{id}'].join(''),
-      args: ['id']
+  verify: {
+    method: "get",
+    route: [route, "/verify/{reference}"].join("")
   },
 
   /*
   List transactions
   */
   list: {
-      method: 'get',
-      endpoint: root
-    },
+    method: "get",
+    route: route,
+    args: ["perPage", "page", "customer", "status", "from", "to", "amount"]
+  },
+
+  /*
+  Get transaction
+  */
+  get: {
+    method: "get",
+    route: [route, "/{id}"].join("")
+  },
+
+  /*
+  Charge authorization
+  */
+  chargeAuth: {
+    method: "post",
+    route: [route, "/charge_authorization"].join(""),
+    params: ["reference", "authorization_code*", "email*", "amount*"]
+  },
+
+  /*
+  View Transaction timeline with ID
+  */
+  viewTimeline: {
+    method: "get",
+    route: [route, "/timeline/{id}"].join("")
+  },
+
+  /*
+  View Transaction timeline with Reference
+  */
+  viewTimelineRef: {
+    method: "get",
+    route: [route, "/timeline/{reference}"].join("")
+  },
 
   /*
   Get totals
   */
   totals: {
-      method: 'get',
-      endpoint: [root, '/totals'].join('')
-    },
+    method: "get",
+    route: [route, "/totals"].join("")
+  },
 
   /*
-  Verify transaction
+  Export transactions
   */
-  verify: {
-      method: 'get',
-      endpoint: [root, '/verify/{reference}'].join(''),
-      args: ['reference']
-    },
+  export: {
+    method: "get",
+    route: [route, "/export"].join(""),
+    args: ["from", "to", "settled", "payment_page"]
+  },
 
+  /*
+  Request Reauthorization
+  */
+  reAuthorize: {
+    method: "post",
+    route: [route, "/request_reauthorization"].join(""),
+    params: ["authorization_code*", "amount*", "email*"]
+  },
+
+  /*
+  Check Authorization
+  */
+  checkAuth: {
+    method: "post",
+    route: [route, "/check_authorization"].join(""),
+    params: ["authorization_code*", "amount*", "email*"]
+  }
 };

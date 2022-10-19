@@ -57,8 +57,8 @@ module.exports = {
     update: {
       method: 'get',
      // endpoint:[root, '/manage/link'].join(''),
-      route: `${route}/{code}/manage/link`,
+      route: `${route}/{subscription_code}/manage/link`,
     //  params: ['code*','id_or_subscription_code'],
-      params: ["code"]
+      params: ["subscription_code"],
       }
 };
